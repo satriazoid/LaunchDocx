@@ -28,4 +28,4 @@ LaunchDocx menghasilkan struktur dokumen standar sebagai berikut:
 ## 🚀 Cara Menjalankan
 1. Clone repositori ini:
    ```bash
-   git clone [https://github.com/username/LaunchDocx.git](https://github.com/username/LaunchDocx.git)
+   git clone [https://github.com/username/LaunchDocx.git](https://github.com/satriazoid/LaunchDocx.git)
