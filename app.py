@@ -1,127 +1,140 @@
 import streamlit as st
 from docx import Document
 from docx.shared import Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from io import BytesIO
 import re
 
-# --- KONFIGURASI TEMA UI ---
-st.set_page_config(page_title="UNPAM Doc Generator", page_icon="🎓")
-
-# --- FUNGSI MEMBERSIHKAN TEKS ---
-def clean_ai_text(text):
+# --- FUNGSI CLEANSING ---
+def clean_ai_content(text):
     if not text: return ""
-    text = text.replace("**", "").replace("__", "")
-    return text.strip()
+    text = text.replace("**", "").replace("__", "").replace("*", "").replace("_", "")
+    text = re.sub(r'#+\s?', '', text)
+    text = text.replace("--", "").replace("—", "").replace("–", "")
+    lines = text.split('\n')
+    cleaned_lines = [re.sub(r'^[•\-\s]+', '', line) for line in lines]
+    return '\n'.join(cleaned_lines).strip()
 
-# --- FUNGSI GENERATE DOCX ---
-def generate_unpam_docx(judul, penulis, nim, konten_dict):
+# --- FUNGSI STYLING HEADING & PARAGRAF ---
+def set_heading_style(paragraph, size, bold=True):
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER if size == 14 else WD_ALIGN_PARAGRAPH.LEFT
+    paragraph.paragraph_format.line_spacing = 1.5
+    run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+    run.font.name = 'Times New Roman'
+    run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+    run.font.size = Pt(size)
+    run.font.bold = bold
+    run.font.color.rgb = RGBColor(0, 0, 0) # Wajib Hitam
+
+def add_body_text(doc, text):
+    cleaned = clean_ai_content(text)
+    if not cleaned: return
+    p = doc.add_paragraph(cleaned)
+    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p.paragraph_format.line_spacing = 1.5
+    for run in p.runs:
+        run.font.name = 'Times New Roman'
+        run.font.size = Pt(12)
+        run.font.color.rgb = RGBColor(0, 0, 0)
+
+# --- CORE GENERATOR ---
+def generate_formal_document(data):
     doc = Document()
     
-    # Fungsi Helper Font
-    def format_run(run, size, bold=False):
-        run.font.name = 'Times New Roman'
-        run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-        run.font.size = Pt(size)
-        run.font.bold = bold
-
-    # --- 1. HALAMAN COVER ---
+    # 1. COVER (Non-Heading)
     cp = doc.add_paragraph()
     cp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    format_run(cp.add_run(judul.upper() + "\n\n\n\n\n\n\n"), 14, True)
+    run_judul = cp.add_run(data['judul'].upper() + "\n\n\n\n\n\n")
+    set_heading_style(cp, 14, True)
     
-    cp_penulis = doc.add_paragraph()
-    cp_penulis.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    format_run(cp_penulis.add_run(f"Oleh:\n{penulis.upper()}\nNIM: {nim}\n\n\n\n\n\n"), 12, True)
+    cp2 = doc.add_paragraph()
+    cp2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run_mhs = cp2.add_run(f"Oleh:\n{data['nama'].upper()}\nNIM: {data['nim']}\n\n\n\n\n\n")
+    set_heading_style(cp2, 12, True)
     
-    cp_univ = doc.add_paragraph()
-    cp_univ.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    format_run(cp_univ.add_run("PROGRAM STUDI TEKNIK INFORMATIKA\nUNIVERSITAS PAMULANG\n2026"), 14, True)
+    cp3 = doc.add_paragraph()
+    cp3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run_univ = cp3.add_run("PROGRAM STUDI TEKNIK INFORMATIKA\nUNIVERSITAS PAMULANG\n2026")
+    set_heading_style(cp3, 14, True)
     doc.add_page_break()
 
-    # --- 2. HALAMAN FORMAL (PENGANTAR, DAFTAR ISI, DLL) ---
-    halaman_formal = ["KATA PENGANTAR", "DAFTAR ISI", "DAFTAR TABEL", "DAFTAR GAMBAR"]
-    for hal in halaman_formal:
-        p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        format_run(p.add_run(hal), 14, True)
-        
-        content = doc.add_paragraph()
-        content.paragraph_format.line_spacing = 1.5
-        content.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        format_run(content.add_run(clean_ai_text(konten_dict.get(hal, "..."))), 12, False)
+    # 2. HALAMAN FORMAL (HEADING 1)
+    formal_pages = ["KATA PENGANTAR", "DAFTAR ISI", "DAFTAR TABEL", "DAFTAR GAMBAR"]
+    for title in formal_pages:
+        h = doc.add_heading(title, level=1)
+        set_heading_style(h, 14, True)
+        if data.get(title):
+            add_body_text(doc, data[title])
         doc.add_page_break()
 
-    # --- 3. BAB 1 - 5 ---
-    bab_list = [
-        ("BAB I", "PENDAHULUAN"),
-        ("BAB II", "LANDASAN TEORI"),
-        ("BAB III", "METODOLOGI PENELITIAN"),
-        ("BAB IV", "HASIL DAN PEMBAHASAN"),
-        ("BAB V", "KESIMPULAN DAN SARAN")
+    # 3. BAB I - V & SUB-BAB (HEADING 1 & 2)
+    struktur = [
+        ("BAB I", "PENDAHULUAN", ["1.1 Latar Belakang", "1.2 Rumusan Masalah", "1.3 Tujuan Penelitian"]),
+        ("BAB II", "LANDASAN TEORI", ["2.1 Teori Umum", "2.2 Teori Khusus"]),
+        ("BAB III", "METODOLOGI PENELITIAN", ["3.1 Alur Penelitian", "3.2 Teknik Data"]),
+        ("BAB IV", "HASIL DAN PEMBAHASAN", ["4.1 Implementasi", "4.2 Pembahasan"]),
+        ("BAB V", "PENUTUP", ["5.1 Kesimpulan", "5.2 Saran"])
     ]
 
-    for code, nama in bab_list:
-        # Judul Bab
-        p_bab = doc.add_paragraph()
-        p_bab.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        format_run(p_bab.add_run(f"{code}\n{nama}"), 14, True)
+    for code, name, subs in struktur:
+        h_bab = doc.add_heading(f"{code} {name}", level=1)
+        set_heading_style(h_bab, 14, True)
         
-        # Isi Bab
-        p_isi = doc.add_paragraph()
-        p_isi.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        p_isi.paragraph_format.line_spacing = 1.5
-        # Mengambil isi berdasarkan nama Bab
-        raw_text = konten_dict.get(nama, "Tulis isi bab di sini...")
-        format_run(p_isi.add_run(clean_ai_text(raw_text)), 12, False)
-        
+        for sub in subs:
+            h_sub = doc.add_heading(sub, level=2)
+            set_heading_style(h_sub, 12, True)
+            add_body_text(doc, data.get(sub, ""))
         doc.add_page_break()
+
+    # 4. DAFTAR PUSTAKA (HEADING 1)
+    h_ref = doc.add_heading("DAFTAR PUSTAKA", level=1)
+    set_heading_style(h_ref, 14, True)
+    add_body_text(doc, data.get("DAFTAR PUSTAKA", ""))
 
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     return buffer
 
-# --- UI STREAMLIT ---
-st.title("🎓 UNPAM Document Generator")
-st.write("Format otomatis: Times New Roman, 1.5 Spacing, Judul Bab 14pt.")
+# --- STREAMLIT UI ---
+st.title("🎓 UNPAM Doc Engine (Heading Support)")
 
-with st.expander("Informasi Dokumen", expanded=True):
-    col1, col2, col3 = st.columns(3)
-    judul = col1.text_input("Judul Tugas Akhir")
-    nama = col2.text_input("Nama Lengkap")
-    nim = col3.text_input("NIM")
+with st.sidebar:
+    st.header("Konfigurasi")
+    judul = st.text_input("Judul", "Analisis Strategi...")
+    nama = st.text_input("Nama")
+    nim = st.text_input("NIM")
 
-st.markdown("### Isi Konten Halaman")
-tabs = st.tabs(["Formal", "Bab 1-3", "Bab 4-5"])
-
-konten_user = {}
+tabs = st.tabs(["Formal", "Bab I-II", "Bab III-IV", "Bab V & Pustaka"])
+konten = {'judul': judul, 'nama': nama, 'nim': nim}
 
 with tabs[0]:
-    konten_user["KATA PENGANTAR"] = st.text_area("Isi Kata Pengantar")
-    konten_user["DAFTAR ISI"] = st.text_area("Daftar Isi (Manual/Placeholder)")
-    konten_user["DAFTAR TABEL"] = st.text_area("Daftar Tabel")
-    konten_user["DAFTAR GAMBAR"] = st.text_area("Daftar Gambar")
-
+    konten["KATA PENGANTAR"] = st.text_area("Kata Pengantar")
+    konten["DAFTAR ISI"] = st.text_area("Daftar Isi (Opsional)")
+    
 with tabs[1]:
-    konten_user["PENDAHULUAN"] = st.text_area("Isi BAB I")
-    konten_user["LANDASAN TEORI"] = st.text_area("Isi BAB II")
-    konten_user["METODOLOGI PENELITIAN"] = st.text_area("Isi BAB III")
+    konten["1.1 Latar Belakang"] = st.text_area("1.1 Latar Belakang")
+    konten["1.2 Rumusan Masalah"] = st.text_area("1.2 Rumusan Masalah")
+    konten["1.3 Tujuan Penelitian"] = st.text_area("1.3 Tujuan Penelitian")
+    konten["2.1 Teori Umum"] = st.text_area("2.1 Teori Umum")
+    konten["2.2 Teori Khusus"] = st.text_area("2.2 Teori Khusus")
 
 with tabs[2]:
-    konten_user["HASIL DAN PEMBAHASAN"] = st.text_area("Isi BAB IV")
-    konten_user["KESIMPULAN DAN SARAN"] = st.text_area("Isi BAB V")
+    konten["3.1 Alur Penelitian"] = st.text_area("3.1 Alur Penelitian")
+    konten["3.2 Teknik Data"] = st.text_area("3.2 Teknik Data")
+    konten["4.1 Implementasi"] = st.text_area("4.1 Implementasi")
+    konten["4.2 Pembahasan"] = st.text_area("4.2 Pembahasan")
 
-if st.button("Generate Dokumen Formal"):
-    if judul and nama:
-        file_docx = generate_unpam_docx(judul, nama, nim, konten_user)
-        st.success("Dokumen siap diunduh!")
-        st.download_button(
-            label="⬇️ Download File .docx",
-            data=file_docx,
-            file_name=f"Tugas_Akhir_{nama}.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
+with tabs[3]:
+    konten["5.1 Kesimpulan"] = st.text_area("5.1 Kesimpulan")
+    konten["5.2 Saran"] = st.text_area("5.2 Saran")
+    konten["DAFTAR PUSTAKA"] = st.text_area("Daftar Pustaka")
+
+if st.button("Generate Formal Document", use_container_width=True):
+    if not nama or not nim:
+        st.warning("Lengkapi Nama dan NIM di sidebar.")
     else:
-        st.warning("Judul dan Nama tidak boleh kosong.")
+        file = generate_formal_document(konten)
+        st.success("Berhasil! Heading sudah aktif di Navigation Pane Word.")
+        st.download_button("Download .docx", file, f"Laporan_{nama}.docx")
