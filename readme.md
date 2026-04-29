@@ -1,31 +1,29 @@
-<p align="center">
-  <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:0066CC,100:00BFA6&height=230&section=header&text=LaunchDocx%20&fontSize=42&fontColor=ffffff&animation=fadeIn&fontAlignY=40&desc=Document%20Automation%20%7C%20Text%20Cleaning%20%7C%20Fullstack%20Python&descAlignY=60&descSize=18" />
-</p>
+# Universal Academic Document Engine
 
-# 🚀 LaunchDocx
-**LaunchDocx** adalah aplikasi berbasis Python yang dirancang untuk mengotomatisasi penyusunan dokumen formal (*White Paper*) dengan standar industri. Aplikasi ini menjembatani kebutuhan antara input teks mentah dengan hasil dokumen Microsoft Word yang terstruktur, rapi, dan siap diterbitkan.
+Universal Academic Document Engine adalah aplikasi berbasis web yang dibangun dengan Streamlit untuk membantu pelajar, mahasiswa, dan profesional dalam menyusun dokumen formal. Engine ini secara otomatis mengatur format tipografi, struktur heading, dan pembersihan artefak teks yang dihasilkan oleh AI (seperti sisa-sisa markdown dari ChatGPT atau Gemini).
 
-## 🛠️ Fitur Utama
-* **Automation Formatting**: Mengatur secara otomatis font *Times New Roman*, ukuran font header (16) dan judul (14), serta margin dokumen tanpa intervensi manual.
-* **Smart Text Cleaning**: Menghapus artefak penulisan, spasi ganda, dan karakter tidak perlu untuk memastikan teks mengalir secara natural dalam paragraf.
-* **Full-Width Divider**: Implementasi garis pemisah horizontal yang membentang penuh di setiap bab menggunakan manipulasi XML Word.
-* **Justified Alignment**: Menghasilkan paragraf dengan rata kanan-kiri yang sempurna untuk tampilan profesional.
-* **Zero-Numbering Sections**: Struktur dokumen bersih tanpa penomoran otomatis pada heading untuk estetika laporan strategis.
+## Fitur Utama
 
-## 💻 Tech Stack
-* **Language**: Python 3.x
-* **Interface**: Streamlit (Web-based UI)
-* **Engine**: Python-Docx (Word Manipulation)
-* **Styling**: Custom CSS for soft-theme interface
+- **Modular Chapter System**: Pengguna dapat menentukan sendiri jumlah bab (1 hingga 7 bab) sesuai dengan kebutuhan laporan atau makalah.
+- **Dynamic Heading Detection**: Sistem secara otomatis mendeteksi penomoran seperti 1.1, 2.1.1, atau 3.2 sebagai Heading resmi Microsoft Word yang terintegrasi dengan Navigation Pane.
+- **Auto Table of Contents**: Menyisipkan field Daftar Isi otomatis yang dapat diperbarui (update field) langsung di dalam Microsoft Word.
+- **Deep Cleansing AI**: Membersihkan simbol markdown (**), sisa heading (#), serta karakter pemisah (--) secara otomatis sebelum dokumen dicetak.
+- **Standard Academic Formatting**:
+  1. Font: Times New Roman.
+  2. Ukuran: 12pt (Isi) dan 14pt (Judul).
+  3. Spasi: 1.5 Line Spacing.
+  4. Perataan: Justify (Rata Kanan-Kiri).
+  5. Alinea: First Line Indent 1cm.
+- **Multi-Author Support**: Mendukung penulisan nama anggota kelompok secara vertikal yang rapi pada halaman cover.
+- **Modular Pages**: Tersedia opsi On/Off untuk Kata Pengantar, Daftar Isi, Daftar Tabel, Daftar Gambar, dan Daftar Pustaka.
 
-## 📂 Struktur Dokumen
-LaunchDocx menghasilkan struktur dokumen standar sebagai berikut:
-1. **Header**: White Paper (Size 16, Bold)
-2. **Title**: Judul Laporan (Size 14, Normal)
-3. **Authorship**: Nama Penulis & Afiliasi
-4. **Main Sections**: Eksekutif, Pendahuluan, Masalah, Metodologi, Solusi, Manfaat, Kesimpulan, dan Referensi.
+## Persyaratan Sistem
 
-## 🚀 Cara Menjalankan
-1. Clone repositori ini:
+Pastikan Anda telah menginstal Python 3.8 atau versi yang lebih baru di sistem Anda.
+
+## Instalasi
+
+1. Clone repository ini:
    ```bash
-   git clone [https://github.com/username/LaunchDocx.git](https://github.com/satriazoid/LaunchDocx.git)
+   git clone [https://github.com/username/universal-doc-engine.git](https://github.com/username/universal-doc-engine.git)
+   cd universal-doc-engine
