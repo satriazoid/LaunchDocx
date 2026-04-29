@@ -25,5 +25,5 @@ Pastikan Anda telah menginstal Python 3.8 atau versi yang lebih baru di sistem A
 
 1. Clone repository ini:
    ```bash
-   git clone [https://github.com/username/universal-doc-engine.git](https://github.com/username/universal-doc-engine.git)
+   git clone https://github.com/satriazoid/Universal-Academic-Document-Engine
    cd universal-doc-engine
